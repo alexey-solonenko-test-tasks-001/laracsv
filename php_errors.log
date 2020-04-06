@@ -1,0 +1,2 @@
+[01-Apr-2020 19:39:44 UTC] PHP Warning:  proc_open(): CreateProcess failed, error code - 19 in phar://C:/ProgramData/ComposerSetup/bin/composer.phar/vendor/symfony/console/Application.php on line 975
+[01-Apr-2020 19:39:46 UTC] PHP Warning:  proc_open(): CreateProcess failed, error code - 19 in phar://C:/ProgramData/ComposerSetup/bin/composer.phar/vendor/symfony/console/Application.php on line 952

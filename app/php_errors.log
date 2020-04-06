@@ -1,0 +1,4 @@
+[03-Apr-2020 17:48:34 UTC] PHP Fatal error:  Uncaught Error: Class 'Illuminate\Foundation\Auth\User' not found in C:\code\laracsv\app\User.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\code\laracsv\app\User.php on line 9

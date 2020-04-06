@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,3 +18,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::prefix('home')->middleware('auth:api')->group(function(){
+    Route::any('/test','HomeControllerApi@test');
+});
+
+Route::middleware('auth:api')->any('/deals_log','ApiDealsLogsController@getDealsLog');
+Route::middleware('auth:api')->any('/upload_csv','ApiDealsLogsController@uploadCsv');
