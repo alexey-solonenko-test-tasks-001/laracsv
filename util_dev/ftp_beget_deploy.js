@@ -20,7 +20,7 @@ let sftp = new Client();
                 let dirs = [
                         'app',
                         'bootstrap',
-                        'config',
+                        //'config',
                         'database',
                         'public',
                         'resources',
@@ -31,7 +31,10 @@ let sftp = new Client();
                 ];
 
                 dirs = [
-                        'tmp',
+                        'app',
+                        'public',
+                        'routes',
+                        'app',
                 ];
 
                 for (let dir of dirs) {
@@ -41,6 +44,8 @@ let sftp = new Client();
                 }
 
                 let files = [
+                        'config/auth.php',
+                        'config/csvhandler.php',
                         '.gitignore',
                         'composer.json',
                         'package.json',

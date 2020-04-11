@@ -9,6 +9,7 @@ class AjaxResponse
     static $data = [];
     static $draw;
     static $errors = [];
+    static $logs = [];
     /** @var int used by DataTables plugin */
     static $recordsTotal;
     static $recordsFiltered;

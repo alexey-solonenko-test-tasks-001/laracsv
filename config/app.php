@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Actual Sales CSV upload, parsing and loading from DB App'),
 
     /*
     |--------------------------------------------------------------------------

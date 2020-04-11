@@ -1,2 +1,4 @@
 [01-Apr-2020 19:39:44 UTC] PHP Warning:  proc_open(): CreateProcess failed, error code - 19 in phar://C:/ProgramData/ComposerSetup/bin/composer.phar/vendor/symfony/console/Application.php on line 975
 [01-Apr-2020 19:39:46 UTC] PHP Warning:  proc_open(): CreateProcess failed, error code - 19 in phar://C:/ProgramData/ComposerSetup/bin/composer.phar/vendor/symfony/console/Application.php on line 952
+[11-Apr-2020 21:38:40 UTC] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php on line 129
+[11-Apr-2020 21:38:40 UTC] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 32768 bytes) in Unknown on line 0

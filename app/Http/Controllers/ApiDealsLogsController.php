@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Utils\AjaxResponse;
+use App\Utils\Defaults;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 
-class ApiDealsLogsController extends Controller
+class ApiDealsLogsController extends Controller implements Defaults
 {
 
 
@@ -64,6 +65,10 @@ class ApiDealsLogsController extends Controller
             return AjaxResponse::respond();
         }
 
+        AjaxResponse::$logs[] = ['time' => date(self::DATE_TIME_FORMAT,time()),'errors' => ['test1','test1a',]];
+        AjaxResponse::$logs[] = ['time' => date(self::DATE_TIME_FORMAT,time()),'confirms' => ['test2','test2a',]];
+        AjaxResponse::$logs[] = ['time' => date(self::DATE_TIME_FORMAT,time()),'warnings' => ['test3','test3a']];
+        AjaxResponse::$logs[] = ['time' => date(self::DATE_TIME_FORMAT,time()),'infos' => ['test4','test4']];
         return AjaxResponse::respond();
     }
 

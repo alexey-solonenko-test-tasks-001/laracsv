@@ -4,5 +4,10 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"*.blade.php" : "html,js,blade,php"
+		},
+		"blade.format.enable": true
+	}
 }

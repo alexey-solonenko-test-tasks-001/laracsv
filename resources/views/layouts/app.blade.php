@@ -10,7 +10,7 @@
     <title>{{ config('app.name', 'Laravel') }}</title>
 
     <!-- Scripts -->
-    <script src="{{ asset('js/app.js') }}" defer></script>
+    <script src="{{ asset('js/app.js') }}" ></script>
     @stack('scripts')
 
     <!-- Fonts -->
@@ -19,6 +19,7 @@
 
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
     @stack('css')
     
 </head>
@@ -78,6 +79,7 @@
 
         <main class="py-4">
             @yield('content')
+            @yield('hidden_templates')
         </main>
     </div>
 </body>
