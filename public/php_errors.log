@@ -12,3 +12,4 @@ Stack trace:
 [05-Apr-2020 09:34:09 UTC] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 65015808 bytes) in C:\code\laracsv\app\Http\Controllers\ApiDealsLogsController.php on line 24
 [11-Apr-2020 21:38:40 UTC] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) in C:\code\laracsv\storage\framework\views\6214d3e760370450f7bafd7e8b1749573f03193d.php on line 18
 [12-Apr-2020 21:10:22 UTC] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 1556480 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 464
+[12-Apr-2020 21:22:08 UTC] PHP Fatal error:  Maximum execution time of 30 seconds exceeded in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 338

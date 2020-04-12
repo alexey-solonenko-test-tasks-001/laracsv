@@ -25,7 +25,7 @@ let sftp = new Client();
                         'public',
                         'resources',
                         'routes',
-                        //'storage',
+                        'storage',
                         'tests',
                         'tmp',
                 ];
@@ -33,8 +33,9 @@ let sftp = new Client();
                 dirs = [
                         'app',
                         'public',
+                        'resources',
                         'routes',
-                        'app',
+                        'tests',
                 ];
 
                 for (let dir of dirs) {

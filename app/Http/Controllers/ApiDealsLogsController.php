@@ -100,8 +100,6 @@ class ApiDealsLogsController extends Controller implements Defaults
                 DB::raw('CONCAT(c.username," (",l.client_id,")") as client'),
                 'd.type_label_en as deal',
                 'l.deal_tstamp as timestamp',
-                'l.deal_tstamp as timestamp',
-                'l.deal_tstamp as timestamp',
                 'deal_accepted as accepted',
                 'deal_refused as refused',
             ]);
@@ -118,6 +116,7 @@ class ApiDealsLogsController extends Controller implements Defaults
 
         $query = $this->selectDealsLogsDataFromDbWhereJoinsClauses($query, $req);
 
+        /* Whichever grouping is applied, accepted and refused will always be sums */
         if (!empty($req['by_client']) || !empty($req['by_deal']) || !empty($req['group_by'])) {
             $columns = array_merge($columns, [
                 DB::raw('SUM(deal_accepted) as accepted'),
@@ -132,7 +131,6 @@ class ApiDealsLogsController extends Controller implements Defaults
         if (!empty($req['by_client'])) {
             $columns = array_merge($columns, ['l.client_id', DB::raw('CONCAT(c.username," (",l.client_id,")") as client')]);
             $groups[] = 'l.client_id';
-            unset($orderCandidates['client']);
         }
         if (empty($req['by_client']) && $withGrouping) {
             unset($orderCandidates['client']);
@@ -153,12 +151,34 @@ class ApiDealsLogsController extends Controller implements Defaults
         }
         $datetimeFormat = Defaults::DATE_TIME_FORMAT;
 
-        /* Build time groupings */
+        /* Build time groupings and amend the orderings accordingly, if needed */
+        $derivedGroupCols = [];
         if (!empty($req['group_by'])) {
             $datetimeFormat = '';
+            /* We need to replace timestamp ordering with our derived cols, but we need to do so exactly in palce of the position where tstamp was */
+            if (!isset($orderCandidates['timestamp'])) {
+                $derivedOrderings = false;
+            } else {
+                /* If we need to include the derived orderings, then let's save the first part of the ordering array, and a common direction for all dervied time-related orderings */
+                $derivedOrderings = [];
+                $tstampDir = $orderCandidates['timestamp'];
+                foreach ($orderCandidates as $col => $dir) {
+                    if ($col == 'timestamp') {
+                        unset($orderCandidates[$col]);
+                        break;
+                    }
+                    $derivedOrderings[$col] = $dir;
+                    unset($orderCandidates[$col]);
+                }
+            }
             foreach (['Y' => 'YEAR', 'm' => 'MONTH', 'd' => 'DAY', 'H' => 'HOUR'] as $gr => $func) {
                 $datetimeFormat .= "%{$gr}";
-                $groups[] = DB::raw("{$func}(from_unixtime(l.deal_tstamp))");
+                $groups[] = $gr;
+                if ($derivedOrderings !== false) {
+                    $derivedOrderings[$gr] = $tstampDir;
+                }
+                $columns[] = DB::raw("{$func}(from_unixtime(l.deal_tstamp)) as {$gr}");
+                $derivedGroupCols[] = DB::raw("{$func}(from_unixtime(l.deal_tstamp)) as {$gr}");
                 if ($gr == $req['group_by']) {
                     break;
                 }
@@ -170,7 +190,12 @@ class ApiDealsLogsController extends Controller implements Defaults
                     $datetimeFormat .= ' ';
                 }
             }
-            $columns[] = DB::raw('MIN(l.deal_tstamp) as timestamp');
+            if ($derivedOrderings !== false) {
+                foreach ($orderCandidates as $col => $dir) {
+                    $derivedOrderings[$col] = $dir;
+                }
+                $orderCandidates = $derivedOrderings;
+            }
         }
 
         /* Set ordering, if any required */
@@ -188,7 +213,6 @@ class ApiDealsLogsController extends Controller implements Defaults
         /* Set columns */
         $query = $query->select($columns);
 
-
         if (isset($req['start']) && isset($req['length'])) {
             /* Get data with pagination, if displaying on the front end */
             $data = $query->simplePaginate($req['length'], $columns, 'page', ($req['start'] / $req['length']));
@@ -203,7 +227,11 @@ class ApiDealsLogsController extends Controller implements Defaults
             $countQry = $this->selectDealsLogsDataFromDbWhereJoinsClauses($countQry, $req);
             if ($withGrouping && $groups) {
                 $countQry->groupBy($groups);
-                $countQry->selectRaw('MIN(l.deal_tstamp) as timestamp');
+                if (!empty($derivedGroupCols)) {
+                    $countQry->select($derivedGroupCols);
+                } else {
+                    $countQry->selectRaw('-1 as timestamp');
+                }
             }
             $count = ((array) DB::select("SELECT count(*) as c from ({$countQry->toSql()}) t")[0])['c'];
         } else {
@@ -246,8 +274,6 @@ class ApiDealsLogsController extends Controller implements Defaults
             $query = $query->where('c.username', 'LIKE', '%' . $req['client'] . '%');
         }
 
-
-
         return $query;
     }
 
@@ -268,12 +294,25 @@ class ApiDealsLogsController extends Controller implements Defaults
             $dbRows = ((array) $dbData['data'])['data'];
         }
         $format = str_replace('%', '', $dbData['dtFormat']);
-        AjaxResponse::$resPayload['debug_format'] = $format;
+
         foreach ($dbRows as $dbRow) {
             $row = (array) $dbRow;
+            /* Timestamp is provided only when no grouping is applied */
+            $dateString = '-';
+            $tstamp = 0;
+            if (empty($row['timestamp'])) {
+                /* In case grouping is applied there might be separate Y,m,d,H values provided, let's check for them */
+                error_reporting(E_ALL ^ E_NOTICE);
+                $tstamp = mktime(($row['H'] ?? 1), 1, 1, $row['m'], ($row['d'] ?? 1), $row['Y']);
+                error_reporting(E_ALL);
+                $dateString = date($format, $tstamp);
+            } elseif ($row['timestamp'] > -1) {
+                $dateString = date(Defaults::DATE_TIME_FORMAT, $row['timestamp']);
+                $tstamp = $row['timestamp'];
+            }
             $row['time'] = [
-                'display' => ($row['timestamp'] > 0 ? date($format, $row['timestamp']) : '-'),
-                'timestamp' => ($row['timestamp'] > 0 ? $row['timestamp'] : 0),
+                'display' => $dateString,
+                'timestamp' => $tstamp,
             ];
             unset($row['timestamp']);
             unset($row['client_id']);
@@ -304,7 +343,7 @@ class ApiDealsLogsController extends Controller implements Defaults
             $dealId = rand(0, $dealsLen);
             $Jan1Of2015 = 1420124751;
             $baseTstamp = date_create_from_format('Y-m-d H:i:s', date('Y-m-d', rand($Jan1Of2015, time())) . ' 00:00:00');
-            for ($j = 0; $j < 288; $j++) {
+            for ($j = 1; $j <= 100; $j++) {
                 $row['client_id'] = $clientId;
                 $row['deal_type'] = $dealId;
                 /* Within the same day */
@@ -312,8 +351,11 @@ class ApiDealsLogsController extends Controller implements Defaults
                 $row['deal_accepted'] = rand(0, 20);
                 $row['deal_refused'] = rand(0, 20);
                 $logs[] = $row;
+                if ($j % 100 == 0) {
+                    DB::table('deals_log')->insert($logs);
+                    $logs = [];
+                }
             }
-            DB::table('deals_log')->insert($logs);
         }
         AjaxResponse::$confirms[] = 'Records added. Reload table';
         AjaxResponse::$logs[] = [
@@ -393,7 +435,7 @@ class ApiDealsLogsController extends Controller implements Defaults
                 }
                 $file->next();
             }
-            if(!empty($values)){
+            if (!empty($values)) {
                 $values = $this->processCsvBatchOfLines($values, $headers);
             }
         } catch (\Exception $e) {
@@ -413,8 +455,6 @@ class ApiDealsLogsController extends Controller implements Defaults
      */
     protected function getFile(Request $request)
     {
-
-        AjaxResponse::$confirms[] = ($request->has('csv') ? 'has' : 'does not have');
         $fileIsInRequest = false;
         if ($request->has('csv')) {
             /** @var UploadedFile */
@@ -432,7 +472,7 @@ class ApiDealsLogsController extends Controller implements Defaults
 
         if (!$fileIsInRequest) {
             set_time_limit(0);
-            $fp = fopen(base_path().'/tmp/localfile.tmp', 'w+');
+            $fp = fopen(base_path() . '/tmp/localfile.tmp', 'w+');
             $ch = curl_init(preg_replace('/\s/', '%20', 'tab4lioz.beget.tech/TRIAL CSV - CSV.csv'));
             curl_setopt($ch, CURLOPT_TIMEOUT, 50);
             curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -440,7 +480,7 @@ class ApiDealsLogsController extends Controller implements Defaults
             curl_exec($ch);
             curl_close($ch);
             fclose($fp);
-            $file = new \SplFileObject(base_path().'/tmp/localfile.tmp', 'r');
+            $file = new \SplFileObject(base_path() . '/tmp/localfile.tmp', 'r');
         }
 
         if ($file->isExecutable()) {
