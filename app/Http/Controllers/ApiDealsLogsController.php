@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Utils\AjaxResponse;
 use App\Utils\Defaults;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
+use PDO;
 
 class ApiDealsLogsController extends Controller implements Defaults
 {
@@ -56,19 +59,23 @@ class ApiDealsLogsController extends Controller implements Defaults
                 $request->merge(['to_tstamp' => $to->getTimestamp()]);
             }
             $dbData = $this->selectDealsLogsDataFromDb($request);
-            AjaxResponse::$data = $this->formatDbLogsDataForDataTablesPlugin($dbData['data']);
-            AjaxResponse::$recordsTotal = $dbData['count'];
-            AjaxResponse::$recordsFiltered = $dbData['count'];
+            AjaxResponse::$resPayload['debug_db_data'] = $dbData;
+            AjaxResponse::$data = $this->formatDbLogsDataForDataTablesPlugin($dbData);
+            AjaxResponse::$recordsTotal = ($dbData['count'] ?? 100);
+            AjaxResponse::$recordsFiltered = ($dbData['count'] ?? 100);
             AjaxResponse::$draw = $req['draw'];
+            AjaxResponse::$logs[] = [
+                'time' => time(),
+                'infos' => [
+                    DB::getQueryLog()[count(DB::getQueryLog()) - 2]['query'],
+                ]
+            ];
         } catch (\Exception $e) {
             AjaxResponse::$errors[] = $e->getMessage();
             return AjaxResponse::respond();
         }
 
-        AjaxResponse::$logs[] = ['time' => date(self::DATE_TIME_FORMAT,time()),'errors' => ['test1','test1a',]];
-        AjaxResponse::$logs[] = ['time' => date(self::DATE_TIME_FORMAT,time()),'confirms' => ['test2','test2a',]];
-        AjaxResponse::$logs[] = ['time' => date(self::DATE_TIME_FORMAT,time()),'warnings' => ['test3','test3a']];
-        AjaxResponse::$logs[] = ['time' => date(self::DATE_TIME_FORMAT,time()),'infos' => ['test4','test4']];
+        AjaxResponse::$resPayload['req'] = $request->all();
         return AjaxResponse::respond();
     }
 
@@ -81,26 +88,149 @@ class ApiDealsLogsController extends Controller implements Defaults
      */
     protected function selectDealsLogsDataFromDb(Request $request)
     {
-
+        /* Prepare vars */
         $req = $request->all();
         $query = DB::table('deals_log AS l');
-        $query->join('client_list AS c', 'c.client_id', '=', 'l.client_id')
-            ->join('deal_types AS d', 'd.deal_type', '=', 'l.deal_type');
-        $columns = [
-            'c.username as client',
-            'd.type_label_en as deal',
-            'l.deal_tstamp as timestamp',
-            'deal_accepted as accepted',
-            'deal_refused as refused',
-        ];
+        $columns = [];
+        $withGrouping = !(empty($req['by_client']) && empty($req['by_deal']) && empty($req['group_by']));
 
+        /* Usual columns without grouping */
+        if (!$withGrouping) {
+            $columns = array_merge($columns, [
+                DB::raw('CONCAT(c.username," (",l.client_id,")") as client'),
+                'd.type_label_en as deal',
+                'l.deal_tstamp as timestamp',
+                'l.deal_tstamp as timestamp',
+                'l.deal_tstamp as timestamp',
+                'deal_accepted as accepted',
+                'deal_refused as refused',
+            ]);
+        }
 
+        /* Prepare all possible order columns. In case of group by then later we are removing those columns, which are not present in group by */
+        $orderCandidates = [];
         if (!empty($req['order'])) {
-            $orderCols = ['username', 'type_label_en', 'deal_tstamp', 'deal_accepted', 'deal_refused'];
+            $orderCols = ['client', 'deal', 'timestamp', 'accepted', 'refused'];
             foreach ($req['order'] as $ord) {
-                $query = $query->orderBy($orderCols[$ord['column']], $ord['dir']);
+                $orderCandidates[$orderCols[$ord['column']]] = $ord['dir'];
             }
         }
+
+        $query = $this->selectDealsLogsDataFromDbWhereJoinsClauses($query, $req);
+
+        if (!empty($req['by_client']) || !empty($req['by_deal']) || !empty($req['group_by'])) {
+            $columns = array_merge($columns, [
+                DB::raw('SUM(deal_accepted) as accepted'),
+                DB::raw('SUM(deal_refused) as refused'),
+            ]);
+        }
+
+        /* Groupings */
+        $groups = [];
+
+        /* Grouping by client column */
+        if (!empty($req['by_client'])) {
+            $columns = array_merge($columns, ['l.client_id', DB::raw('CONCAT(c.username," (",l.client_id,")") as client')]);
+            $groups[] = 'l.client_id';
+            unset($orderCandidates['client']);
+        }
+        if (empty($req['by_client']) && $withGrouping) {
+            unset($orderCandidates['client']);
+        }
+
+        /* Grouping by deal column */
+        if (!empty($req['by_deal'])) {
+            $columns = array_merge($columns, ['l.deal_type', 'd.type_label_en as deal']);
+            $groups[] = 'l.deal_type';
+        }
+        if (empty($req['by_deal']) && $withGrouping) {
+            unset($orderCandidates['deal']);
+        }
+
+        /* Grouping by time, prepare */
+        if (empty($req['group_by']) && (!empty($req['by_client']) || !empty($req['by_deal']))) {
+            $columns[] = DB::raw('AVG(-1) as timestamp');
+        }
+        $datetimeFormat = Defaults::DATE_TIME_FORMAT;
+
+        /* Build time groupings */
+        if (!empty($req['group_by'])) {
+            $datetimeFormat = '';
+            foreach (['Y' => 'YEAR', 'm' => 'MONTH', 'd' => 'DAY', 'H' => 'HOUR'] as $gr => $func) {
+                $datetimeFormat .= "%{$gr}";
+                $groups[] = DB::raw("{$func}(from_unixtime(l.deal_tstamp))");
+                if ($gr == $req['group_by']) {
+                    break;
+                }
+                if (in_array($gr, ['Y', 'm'])) {
+                    $datetimeFormat .= '-';
+                } elseif (in_array($gr, ['i'])) {
+                    $datetimeFormat .= ':';
+                } else {
+                    $datetimeFormat .= ' ';
+                }
+            }
+            $columns[] = DB::raw('MIN(l.deal_tstamp) as timestamp');
+        }
+
+        /* Set ordering, if any required */
+        if (!empty($groups)) {
+            $query = $query->groupBy($groups);
+        }
+
+        /* Set ordering if any left */
+        if (!empty($orderCandidates)) {
+            foreach ($orderCandidates as $col => $dir) {
+                $query = $query->orderBy($col, $dir);
+            }
+        }
+
+        /* Set columns */
+        $query = $query->select($columns);
+
+
+        if (isset($req['start']) && isset($req['length'])) {
+            /* Get data with pagination, if displaying on the front end */
+            $data = $query->simplePaginate($req['length'], $columns, 'page', ($req['start'] / $req['length']));
+        } else {
+            /* Or, get all data, if, for future, exporting to a file/storage */
+            $data = $query->get();
+        }
+
+        /* If grouping, then handle count customly, as per Laracast guide */
+        if ($withGrouping) {
+            $countQry = DB::table('deals_log AS l');
+            $countQry = $this->selectDealsLogsDataFromDbWhereJoinsClauses($countQry, $req);
+            if ($withGrouping && $groups) {
+                $countQry->groupBy($groups);
+                $countQry->selectRaw('MIN(l.deal_tstamp) as timestamp');
+            }
+            $count = ((array) DB::select("SELECT count(*) as c from ({$countQry->toSql()}) t")[0])['c'];
+        } else {
+            /* Otherwise = a standard count */
+            $count = DB::table('deals_log')->count();
+        }
+
+        return [
+            'data' => $data,
+            'count' => $count,
+            /* Format will be used for formatting results for front end in aggregates */
+            'dtFormat' => $datetimeFormat,
+        ];
+    }
+
+    /**
+     * 
+     *
+     * @param QueryBuilder $query
+     * @param array $req
+     * @return QueryBuilder
+     */
+    protected function selectDealsLogsDataFromDbWhereJoinsClauses(QueryBuilder $query, array $req)
+    {
+        $query
+            ->join('client_list AS c', 'c.client_id', '=', 'l.client_id')
+            ->join('deal_types AS d', 'd.deal_type', '=', 'l.deal_type');
 
         if (!empty($req['to_tstamp'])) {
             $query = $query->where('l.deal_tstamp', '<=', $req['to_tstamp']);
@@ -116,20 +246,9 @@ class ApiDealsLogsController extends Controller implements Defaults
             $query = $query->where('c.username', 'LIKE', '%' . $req['client'] . '%');
         }
 
-        $query = $query
-            ->select($columns);
-        if (isset($req['start']) && isset($req['length'])) {
-            return [
-                'count' => $query->count(),
-                'data' => $query->simplePaginate($req['length'], $columns, 'page', ($req['start'] / $req['length']) + 1),
-            ];
-            $query = $query->limit($req['length'])->offset(($req['start'] / $req['length']) + 1);
-        }
 
-        return [
-            'count' => $query->count(),
-            'data' => (array) $query->get()
-        ];
+
+        return $query;
     }
 
     /**
@@ -141,25 +260,89 @@ class ApiDealsLogsController extends Controller implements Defaults
     protected function formatDbLogsDataForDataTablesPlugin($dbData)
     {
         $ret = [];
-        if ($dbData instanceof Paginator) {
-            $dbRows = $dbData->items();
+        if ($dbData['data'] instanceof Paginator) {
+            $dbRows = $dbData['data']->items();
         } elseif ($dbData instanceof Collection) {
-            $dbRows = $dbData->toArray()['data'];
+            $dbRows = $dbData['data']->toArray()['data'];
         } else {
-            $dbRows = ((array) $dbData)['data'];
+            $dbRows = ((array) $dbData['data'])['data'];
         }
-
+        $format = str_replace('%', '', $dbData['dtFormat']);
+        AjaxResponse::$resPayload['debug_format'] = $format;
         foreach ($dbRows as $dbRow) {
             $row = (array) $dbRow;
             $row['time'] = [
-                'display' => date('Y-m-d H:i', $row['timestamp']),
-                'timestamp' => $row['timestamp']
+                'display' => ($row['timestamp'] > 0 ? date($format, $row['timestamp']) : '-'),
+                'timestamp' => ($row['timestamp'] > 0 ? $row['timestamp'] : 0),
             ];
             unset($row['timestamp']);
+            unset($row['client_id']);
+            unset($row['deal_type']);
             $ret[] = $row;
         }
 
         return $ret;
+    }
+
+
+    /**
+     * 
+     */
+    public function generateRandomDealLogs()
+    {
+        $logs = [];
+        $batch = 50;
+        $deals = DB::table('deal_types')->get(['id']);
+        $deals = array_column($deals->toArray(), 'id');
+        $clients = DB::table('client_list')->get(['id']);
+        $clients = array_column($clients->toArray(), 'id');
+        $dealsLen = count($deals) - 1;
+        $clientsLen = count($clients) - 1;
+
+        for ($i = 0; $i < $batch; $i++) {
+            $clientId = rand(0, $clientsLen);
+            $dealId = rand(0, $dealsLen);
+            $Jan1Of2015 = 1420124751;
+            $baseTstamp = date_create_from_format('Y-m-d H:i:s', date('Y-m-d', rand($Jan1Of2015, time())) . ' 00:00:00');
+            for ($j = 0; $j < 288; $j++) {
+                $row['client_id'] = $clientId;
+                $row['deal_type'] = $dealId;
+                /* Within the same day */
+                $row['deal_tstamp'] = rand($baseTstamp->getTimestamp(), $baseTstamp->getTimestamp() + rand(0, 24) * 3600);
+                $row['deal_accepted'] = rand(0, 20);
+                $row['deal_refused'] = rand(0, 20);
+                $logs[] = $row;
+            }
+            DB::table('deals_log')->insert($logs);
+        }
+        AjaxResponse::$confirms[] = 'Records added. Reload table';
+        AjaxResponse::$logs[] = [
+            'time' => date(Defaults::DATE_TIME_FORMAT, time()),
+            'info' => [
+                'Inserted random data into deals log table. Reload to see results.'
+            ]
+        ];
+
+        return AjaxResponse::respond();
+    }
+
+    /**
+     * function
+     *
+     * @return void
+     */
+    public function emptyDealLogsTable()
+    {
+        DB::table('deals_log')->delete();
+        AjaxResponse::$confirms[] = 'Deal Logs table emptied.';
+        AjaxResponse::$logs[] = [
+            'time' => date(Defaults::DATE_TIME_FORMAT, time()),
+            'info' => [
+                'Deal Logs table emptied.'
+            ]
+        ];
+
+        return AjaxResponse::respond();
     }
 
     /**
@@ -195,9 +378,8 @@ class ApiDealsLogsController extends Controller implements Defaults
                 'deals' => [],
                 'logs' => [],
             ];
-            while ($file->valid() && $file->key() < ($totalLines - 2)) {
+            while ($file->valid() && $file->key() <= ($totalLines - 1)) {
                 try {
-
                     $values = $this->sanitizeAndValidateLine($file->current(), $file->key(), $values);
                     // if we upload to DB on every iteration, it takes too long, let's upload in small batches.
                     if ($file->key() % $batchSize == 0 && $file->key() > 1) {
@@ -210,6 +392,9 @@ class ApiDealsLogsController extends Controller implements Defaults
                     }
                 }
                 $file->next();
+            }
+            if(!empty($values)){
+                $values = $this->processCsvBatchOfLines($values, $headers);
             }
         } catch (\Exception $e) {
             DB::rollBack();
@@ -229,19 +414,25 @@ class ApiDealsLogsController extends Controller implements Defaults
     protected function getFile(Request $request)
     {
 
-        /** @var UploadedFile */
-        $uploadedFile = $request->file('csv');
-        $ajaxedFile = [
-            'tmp_name' => $uploadedFile->getPathname(),
-            'error' => $uploadedFile->getError(),
-            'size' => $uploadedFile->getSize(),
-        ];
-        //$ajaxedFile = $_FILES['csv'];
-        if (isset($ajaxedFile['error']) && $ajaxedFile['error'] == 0 && $ajaxedFile['size'] > 1) {
-            $file = new \SplFileObject($ajaxedFile['tmp_name'], 'r');
-        } else {
+        AjaxResponse::$confirms[] = ($request->has('csv') ? 'has' : 'does not have');
+        $fileIsInRequest = false;
+        if ($request->has('csv')) {
+            /** @var UploadedFile */
+            $uploadedFile = $request->file('csv');
+            $ajaxedFile = [
+                'tmp_name' => $uploadedFile->getPathname(),
+                'error' => $uploadedFile->getError(),
+                'size' => $uploadedFile->getSize(),
+            ];
+            if (isset($ajaxedFile['error']) && $ajaxedFile['error'] == 0 && $ajaxedFile['size'] > 1) {
+                $file = new \SplFileObject($ajaxedFile['tmp_name'], 'r');
+                $fileIsInRequest = true;
+            }
+        }
+
+        if (!$fileIsInRequest) {
             set_time_limit(0);
-            $fp = fopen('./tmp/localfile.tmp', 'w+');
+            $fp = fopen(base_path().'/tmp/localfile.tmp', 'w+');
             $ch = curl_init(preg_replace('/\s/', '%20', 'tab4lioz.beget.tech/TRIAL CSV - CSV.csv'));
             curl_setopt($ch, CURLOPT_TIMEOUT, 50);
             curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -249,7 +440,7 @@ class ApiDealsLogsController extends Controller implements Defaults
             curl_exec($ch);
             curl_close($ch);
             fclose($fp);
-            $file = new \SplFileObject('./tmp/localfile.tmp', 'r');
+            $file = new \SplFileObject(base_path().'/tmp/localfile.tmp', 'r');
         }
 
         if ($file->isExecutable()) {

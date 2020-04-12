@@ -25,3 +25,5 @@ Route::prefix('home')->middleware('auth:api')->group(function(){
 
 Route::middleware('auth:api')->any('/deals_log','ApiDealsLogsController@getDealsLog');
 Route::middleware('auth:api')->any('/upload_csv','ApiDealsLogsController@uploadCsv');
+Route::middleware('auth:api')->any('/random_deal_logs','ApiDealsLogsController@generateRandomDealLogs');
+Route::middleware('auth:api')->any('/empty_deal_logs','ApiDealsLogsController@emptyDealLogsTable');

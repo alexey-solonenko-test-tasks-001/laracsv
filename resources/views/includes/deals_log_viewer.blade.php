@@ -1,4 +1,3 @@
-
 @section('table')
 <table class=' deals_log_table w-100' id='deals_log_table'>
     <thead>
@@ -24,28 +23,35 @@
 
 <div class='card my-3'>
     <div class='card-header'>
-        <h2>Deals Log Table {{ $now }}</h2>
+        <h2>Deals Log Table</h2>
     </div>
     <div class='card-body'>
-        @php  $form = 'load_deals_log_form' @endphp
+        @php $form = 'load_deals_log_form' @endphp
         <form name='{{ $form }}' id='{{ $form }}' method="POST">
             <div class='form-row align-items-end'>
                 @include('fields.date',['name'=> 'from','label'=>'From'])
                 @include('fields.date',['name'=> 'to','label'=>'To'])
-                <div class='col-12'></div>
                 @include('fields.text',['name'=> 'client','label'=>'Client Search'])
                 @include('fields.text',['name'=> 'deal','label'=>'Deal Search'])
-                <div class='col-12 col-md-auto ml-auto'>
-                    <button class='copy_search_link btn btn-primary align-self-center'>Copy Search Link</button>
-                </div>
-                <div class='col-auto '>
-                    <button class='reload_table btn btn-primary align-self-end'>Load Logs</button>
-                </div>
+                <div class='col-12'></div>
+                @include('fields.cb',['name'=>'by_client','label' => 'Group By Client',])
+                @include('fields.cb',['name'=>'by_deal','label' => 'Group By Deal',])
+                @include('fields.select',['name'=>'group_by','label'=>'Time Grouping','options' => [ ['text' => ''],['text' => 'Month', 'val' => 'm'], ['text' => 'Day', 'val' => 'd'], ['text' => 'Hour', 'val' => 'H']]])
                 <div class='col-12 my-2'></div>
+                @include('fields.btn',['btnCls' => 'empty_logs','label'=> 'Delete All Logs','ajaxCall' => 'empty_deal_logs','btnBaseCls' => 'btn-block btn btn-danger'])
+                @include('fields.btn',['btnCls' => 'random_data','label'=> 'Add Random Data','ajaxCall' => 'random_deal_logs','btnBaseCls' => 'btn-block btn btn-warning'])
+                @include('fields.btn',['btnCls' => 'copy_search_link','label'=> 'Copy Search Link'])
+                @include('fields.btn',['btnCls' => 'reload_table','label'=> 'Load Logs','btnBaseCls' => 'btn-block btn btn-success'])
+                <div class='col-12 my-2'></div>
+                <div class='col-12 col-md-6'>
+                    <p>You can select multiple ordering by holding down <kbd>Shift</kbd> key and clicking a corrsponding header</p>
+                    <p><b>Or</b>, you can apply a default multi-column ordering</p>
+                </div>
+                @include('fields.btn',['btnCls' => 'handy_ordering','label'=> 'Handy Ordering'])
                 <div class='col-12 '>@yield('table')</div>
                 <div class='col-12'></div>
                 <div class='col-auto mr-auto'></div>
-                <div class='col-auto ml-auto'><button class='reload_table btn btn-primary'>Load Logs</button></div>
+                @include('fields.btn',['btnCls' => 'reload_table','label'=> 'Load Logs'])
                 <div class='col-12'></div>
             </div>
         </form>
@@ -76,7 +82,7 @@
 
 
     dealsLogViewer.fn.init = function() {
-        dealsLogViewer.el.form= document.querySelector('form[name="load_deals_log_form"]');
+        dealsLogViewer.el.form = document.querySelector('form[name="load_deals_log_form"]');
         dealsLogViewer.el.reloadTableBtns = Array.from(document.querySelectorAll('.reload_table.btn'));
         dealsLogViewer.el.dealLogsTable = document.querySelector('.deals_log_table');
         dealsLogViewer.el.jDealLogsTable = $(dealsLogViewer.el.dealLogsTable);
@@ -86,6 +92,7 @@
         dealsLogViewer.el.to = document.querySelector('form[name="load_deals_log_form"] input[name="to"]');
         dealsLogViewer.el.to.value = '';
         dealsLogViewer.el.copyLinkBtn = document.querySelector('form[name="load_deals_log_form"] button.copy_search_link');
+        dealsLogViewer.el.handyOrdering = document.querySelector('form[name="load_deals_log_form"] button.handy_ordering');
     };
 
     dealsLogViewer.fn.initReloadTableBtn = function() {
@@ -108,20 +115,21 @@
             'searching': false,
             ajax: {
                 data: dealsLogViewer.fn.dealLogsData,
-                beforeSend: dealsLogViewer.fn.dealsLogsBeforeSend,
                 url: 'deals_log',
                 type: "GET",
                 dataType: "json",
-                complete:function(){
+                complete: function() {
                     let u = new URL(this.url);
                     window.lastDealLogsUrl = location.origin + location.pathname + u.search;
                 }
             },
             columns: [{
                     data: 'client',
+                    defaultContent: '-',
                 },
                 {
                     data: 'deal',
+                    defaultContent: '-',
                 },
                 {
                     data: 'time',
@@ -160,19 +168,21 @@
         }
         delete window.searchDealLogsParams;
 
-        dealsLogViewer.el.jDealLogsTable.on('xhr.dt',function(e,settings,json,xhr){
-            let api = new $.fn.dataTable.Api(settings);
-            console.log(api);
-            console.log(xhr);
-        });
-
         dealsLogViewer.el.jDealLogsTable.DataTable(initConfig);
         dealsLogViewer.el.dDealLogsTable = dealsLogViewer.el.jDealLogsTable.DataTable();
+
         dealsLogViewer.el.logsForm.addEventListener('keydown', ev => {
             if (ev.key == 'Enter') {
                 ev.preventDefault;
                 dealsLogViewer.el.dDealLogsTable.ajax.reload(null, false);
             }
+        });
+
+        dealsLogViewer.el.handyOrdering.addEventListener('click', function(ev) {
+            if (ev instanceof Event) {
+                ev.preventDefault();
+            }
+            dealsLogViewer.el.dDealLogsTable.order([0, 'asc'], [1, 'asc'], [2, 'desc'], [3, 'desc']).ajax.reload(null, false);
         });
     };
 
@@ -183,9 +193,6 @@
         }
     };
 
-    dealsLogViewer.fn.dealsLogsBeforeSend = function(req, settings) {
-        window.lastDealLogsUrl = settings.url;
-    }
     /**
      * @function dealsLogViewer.fn.initDealLogsFromLandingParams 
      */
@@ -210,13 +217,17 @@
             el.value = Object.values(param)[0];
         });
     }
-    dealsLogViewer.fn.initCopyLinkBtn = function(){
-            dealsLogViewer.el.copyLinkBtn.addEventListener('click',function(ev){
-            if(ev instanceof Event){
+
+    /**
+     *  @function
+     */
+    dealsLogViewer.fn.initCopyLinkBtn = function() {
+        dealsLogViewer.el.copyLinkBtn.addEventListener('click', async function(ev) {
+            if (ev instanceof Event) {
                 ev.preventDefault();
             }
-            let success= false;
-            if(document.queryCommandSupported('copy') && document.queryCommandEnabled('copy')){
+            let success = false;
+            if (document.queryCommandSupported('copy') && document.queryCommandEnabled('copy')) {
                 let ta = document.createElement('ta');
                 ta.classList.add('d-none');
                 document.body.appendChild(ta);
@@ -224,12 +235,23 @@
                 ta.focus();
                 ta.select();
                 success = document.execCommand('copy');
-                if(success){
+                if (success) {
                     toastr.success('Link copied to clipboard');
                 }
             }
-            if(!success){
-                window.history.pushState({},document.title,window.lastDealLogsUrl);
+            if (!success) {
+                result = await navigator.permissions.query({
+                    name: "clipboard-write"
+                });
+                if (result.state == "granted" || result.state == "prompt") {
+                    try {
+                        let res = await navigator.clipboard.writeText(window.lastDealLogsUrl);
+                        success = true;
+                    } catch (e) {}
+                }
+            }
+            if (!success) {
+                window.history.pushState({}, document.title, window.lastDealLogsUrl);
                 toastr.warning('We are sorry, your browser does not support automatic copying. Please, copy the linke from the browser address bar.')
             }
         });
