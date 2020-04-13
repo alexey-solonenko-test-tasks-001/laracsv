@@ -28,8 +28,8 @@
             </div>
             <div class='card-body'>
                 <div class='form-row'>
-                    <div class='col-auto mr-auto'><button data-btn-self-init-ajax='createTable' class=' btn btn-success'><b>+</b> Create All Tables </button></div>
-                    <div class='col-auto ml-auto'><button data-btn-self-init-ajax='deleteTable' class=' btn btn-danger'><b>X</b> Delete All Tables</button></div>
+                    <div class='col-auto mr-auto'><button data-btn-self-init-ajax='create_tables' class=' btn btn-success'><b>+</b> Create All Tables </button></div>
+                    <div class='col-auto ml-auto'><button data-btn-self-init-ajax='drop_tables' class=' btn btn-danger'><b>X</b> Delete All Tables</button></div>
                 </div>
             </div>
         </div>

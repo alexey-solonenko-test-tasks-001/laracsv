@@ -7,6 +7,15 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
 </p>
 
+
+## Tables 
+
+deals_logs I don't know the requirements for the deal_logs table.
+I added a unique key, however, I would keep a logs table without 
+such constraints, and would allow multiple records for the same tstamp.
+
+
+
 ## About Laravel
 
 Laravel is a web application framework with expressive2, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

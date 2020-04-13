@@ -27,3 +27,5 @@ Route::middleware('auth:api')->any('/deals_log','ApiDealsLogsController@getDeals
 Route::middleware('auth:api')->any('/upload_csv','ApiDealsLogsController@uploadCsv');
 Route::middleware('auth:api')->any('/random_deal_logs','ApiDealsLogsController@generateRandomDealLogs');
 Route::middleware('auth:api')->any('/empty_deal_logs','ApiDealsLogsController@emptyDealLogsTable');
+Route::middleware('auth:api')->any('/create_tables','ApiDealsLogsController@createTables');
+Route::middleware('auth:api')->any('/drop_tables','ApiDealsLogsController@dropTables');

@@ -1,0 +1,4 @@
+[13-Apr-2020 18:21:18 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in C:\code\laracsv\config\filesystems.php:16
+Stack trace:
+#0 {main}
+  thrown in C:\code\laracsv\config\filesystems.php on line 16

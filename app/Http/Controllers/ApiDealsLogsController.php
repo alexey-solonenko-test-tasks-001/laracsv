@@ -13,6 +13,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 use PDO;
 
 class ApiDealsLogsController extends Controller implements Defaults
@@ -49,6 +50,11 @@ class ApiDealsLogsController extends Controller implements Defaults
     {
 
         try {
+            $ret = $this->checkCriticalDataPresence();
+            if ($ret !== true) {
+                return $ret;
+            }
+
             $req = $request->all();
             $from = \DateTime::createFromFormat('Y-m-d H:i:s', $req['from'] . '  00:00:00');
             if ($from instanceof \DateTime) {
@@ -329,6 +335,10 @@ class ApiDealsLogsController extends Controller implements Defaults
      */
     public function generateRandomDealLogs()
     {
+        $ret = $this->checkCriticalDataPresence();
+        if ($ret !== true) {
+            return $ret;
+        }
         $logs = [];
         $batch = 50;
         $deals = DB::table('deal_types')->get(['id']);
@@ -360,12 +370,40 @@ class ApiDealsLogsController extends Controller implements Defaults
         AjaxResponse::$confirms[] = 'Records added. Reload table';
         AjaxResponse::$logs[] = [
             'time' => date(Defaults::DATE_TIME_FORMAT, time()),
-            'info' => [
+            'infos' => [
                 'Inserted random data into deals log table. Reload to see results.'
             ]
         ];
 
         return AjaxResponse::respond();
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @return boolean|string
+     */
+    public function checkCriticalDataPresence()
+    {
+        $ret = DB::select('SELECT table_name from information_schema.tables where table_schema = "' . env('DB_DATABASE') . '"');
+        $allTables = [];
+        foreach ($ret as $row) {
+            $allTables[] = $row->TABLE_NAME;
+        }
+
+        if (empty(array_intersect(['client_list', 'deal_types'], $allTables))) {
+            AjaxResponse::$errors[] = 'Please, first import a file to obtain a list of clients and deal types';
+            return AjaxResponse::respond();
+        }
+
+        $clients = DB::table('client_list')->count();
+        $deals = DB::table('deal_types')->count();
+        if ($clients < 1 || $deals < 1) {
+            AjaxResponse::$errors[] = 'Please, first import a file to obtain a list of clients and deal types';
+            return AjaxResponse::respond();
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -379,7 +417,7 @@ class ApiDealsLogsController extends Controller implements Defaults
         AjaxResponse::$confirms[] = 'Deal Logs table emptied.';
         AjaxResponse::$logs[] = [
             'time' => date(Defaults::DATE_TIME_FORMAT, time()),
-            'info' => [
+            'infos' => [
                 'Deal Logs table emptied.'
             ]
         ];
@@ -393,12 +431,15 @@ class ApiDealsLogsController extends Controller implements Defaults
      * If a file in a input stream is present, then loads from there.
      * By default, loads form a remote backup storage.
      *
+     * @param Request $request
+     * @param string $filepath
+     * 
      * @return string
      */
-    public function uploadCsv(Request $request)
+    public function uploadCsv(Request $request = null, $filepath = '')
     {
         /** @var \SplFileObject */
-        $file = $this->getFile($request);
+        $file = $this->getFile($request, $filepath);
 
         if (!empty(AjaxResponse::$errors)) {
             return AjaxResponse::respond();
@@ -453,21 +494,37 @@ class ApiDealsLogsController extends Controller implements Defaults
      * @param Request $request
      * @return \SplFileObject
      */
-    protected function getFile(Request $request)
+    protected function getFile(Request $request = null, $filepath = '')
     {
         $fileIsInRequest = false;
-        if ($request->has('csv')) {
-            /** @var UploadedFile */
-            $uploadedFile = $request->file('csv');
-            $ajaxedFile = [
-                'tmp_name' => $uploadedFile->getPathname(),
-                'error' => $uploadedFile->getError(),
-                'size' => $uploadedFile->getSize(),
-            ];
-            if (isset($ajaxedFile['error']) && $ajaxedFile['error'] == 0 && $ajaxedFile['size'] > 1) {
-                $file = new \SplFileObject($ajaxedFile['tmp_name'], 'r');
-                $fileIsInRequest = true;
+        if ($request instanceof Request) {
+            if ($request->has('csv')) {
+                /** @var UploadedFile */
+                $uploadedFile = $request->file('csv');
+                $ajaxedFile = [
+                    'tmp_name' => $uploadedFile->getPathname(),
+                    'error' => $uploadedFile->getError(),
+                    'size' => $uploadedFile->getSize(),
+                ];
+                if (isset($ajaxedFile['error']) && $ajaxedFile['error'] == 0 && $ajaxedFile['size'] > 1) {
+                    $file = new \SplFileObject($ajaxedFile['tmp_name'], 'r');
+                    $fileIsInRequest = true;
+                }
             }
+        }
+        if (!empty($filepath)) {
+            if (!file_exists($filepath)) {
+                $filepath = base_path() . '/' . $filepath;
+            }
+            if (!file_exists($filepath)) {
+                $filepath = storage_path() . '/' . $filepath;
+            }
+            if (!file_exists($filepath)) {
+                AjaxResponse::$errors[] = 'Cannot find a local file to read';
+                return;
+            }
+            $file = new \SplFileObject($filepath);
+            $fileIsInRequest = true;
         }
 
         if (!$fileIsInRequest) {
@@ -624,7 +681,7 @@ class ApiDealsLogsController extends Controller implements Defaults
      *
      * @param array $values
      * @param array $headers
-     * @return return
+     * @return array
      */
     protected function processCsvBatchOfLines($values, $headers)
     {
@@ -640,5 +697,84 @@ class ApiDealsLogsController extends Controller implements Defaults
         ];
 
         return $values;
+    }
+
+    /**
+     * 
+     */
+    public function createTables()
+    {
+        try {
+            $ret = DB::select('SELECT table_name from information_schema.tables where table_schema = "' . env('DB_DATABASE') . '"');
+            $allTables = [];
+            foreach ($ret as $row) {
+                $allTables[] = $row->TABLE_NAME;
+            }
+
+            $allTablesQueries = json_decode(Storage::disk('local')->get('queries/create_tables_queries.json'));
+            foreach ($allTablesQueries as $tableName => $query) {
+                if (in_array($tableName, $allTables)) {
+                    AjaxResponse::$errors[] = "Table $tableName already exists, drop the table first to re-create it";
+                } else {
+                    $queryStr = implode(' ', $query);
+                    DB::select($queryStr);
+                    AjaxResponse::$confirms[] = "Table $tableName created successfully.";
+                    AjaxResponse::$logs[] = [
+                        'time' => date(Defaults::DATE_TIME_FORMAT, time()),
+                        'infos' => [
+                            "Table $tableName created successfully. Query: ",
+                            implode(' ', $query),
+                        ],
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            AjaxResponse::$errors[] = $e->getMessage();
+        }
+
+        return AjaxResponse::respond();
+    }
+
+    /**
+     * 
+     */
+    public function dropTables()
+    {
+        try {
+            $ret = DB::select('SELECT table_name from information_schema.tables where table_schema = "' . env('DB_DATABASE') . '"');
+            $allTables = [];
+            foreach ($ret as $row) {
+                $allTables[] = $row->TABLE_NAME;
+            }
+
+            $allTablesQueries = json_decode(Storage::disk('local')->get('queries/create_tables_queries.json'));
+            foreach ($allTablesQueries as $tableName => $query) {
+                /* I don't have access rights to list tables on my hosting, so */
+                if (empty($allTables)) {
+                    DB::select("DROP TABLE $tableName");
+                } else {
+                    if (in_array($tableName, $allTables)) {
+                        DB::select("DROP TABLE $tableName");
+                    } else {
+                        AjaxResponse::$errors[] = "Table $tableName already deleted.";
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            AjaxResponse::$errors[] = $e->getMessage();
+        }
+        AjaxResponse::$logs[] = [
+            'time' => date(Defaults::DATE_TIME_FORMAT, time()),
+            'infos' => [
+                "Tables successfully dropped",
+            ],
+        ];
+
+        return AjaxResponse::respond();
+    }
+
+    public function test()
+    {
+        return 'test';
     }
 }

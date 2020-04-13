@@ -38771,7 +38771,6 @@ homeP.fn.initializeUploadCsvBtn = function () {
       $.ajax({
         url: 'upload_csv'
       });
-      homeP.el.dDealLogsTable.ajax.reload(null, false);
       return;
     }
 

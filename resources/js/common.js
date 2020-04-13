@@ -58,7 +58,6 @@ $(function () {
 
         function initializeSingleMessageTemplate(el) {
             el.classList.add('initialization-completed');
-            console.log(el);
             let btn = el.querySelector('button');
             if (!btn) {
                 return;

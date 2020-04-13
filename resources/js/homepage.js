@@ -22,7 +22,6 @@ homeP.fn.initializeUploadCsvBtn = function () {
         ev.preventDefault();
         function uploadFromRemoteServer() {
             $.ajax({ url: 'upload_csv' });
-            homeP.el.dDealLogsTable.ajax.reload(null, false);
             return;
         }
         if (homeP.el.csvFileInp.value.length > 2 && homeP.el.csvFileInp.files.length > 0) {
