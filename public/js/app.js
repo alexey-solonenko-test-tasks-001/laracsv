@@ -38536,6 +38536,7 @@ $(function () {
    * Do use function to keep the global namespace clean.
    */
   (function () {
+    var _arguments = arguments;
     $(document).ajaxSend(function (event, xhr, settings) {
       settings.url = getAjaxUrl() + settings.url;
     });
@@ -38579,11 +38580,30 @@ $(function () {
       if (res.logs && res.logs.length > 0) {
         common.fn.populateLogsContainers(res.logs);
       }
+
+      Array.from(document.forms).forEach(function (f) {
+        Array.from(f.elements).forEach(function (e) {
+          if (e.hasAttribute('temporarily-disabled') && e.disabled) {
+            e.disabled = false;
+            e.removeAttribute('temporarily-disabled');
+          }
+        });
+      });
+    });
+    $(document).ajaxStart(function () {
+      console.log(_arguments);
+      Array.from(document.forms).forEach(function (f) {
+        Array.from(f.elements).forEach(function (e) {
+          if (!e.disabled) {
+            e.setAttribute('temporarily-disabled', '1');
+            e.disabled = true;
+          }
+        });
+      });
     });
 
     function initializeSingleMessageTemplate(el) {
       el.classList.add('initialization-completed');
-      console.log(el);
       var btn = el.querySelector('button');
 
       if (!btn) {

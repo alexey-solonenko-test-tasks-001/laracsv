@@ -52,6 +52,25 @@ $(function () {
             if (res.logs && res.logs.length > 0) {
                 common.fn.populateLogsContainers(res.logs);
             }
+             Array.from(document.forms).forEach(f =>{
+                Array.from(f.elements).forEach(e => {
+                    if(e.hasAttribute('temporarily-disabled') && e.disabled){
+                        e.disabled = false;
+                        e.removeAttribute('temporarily-disabled');
+                    }
+                });
+            });
+        });
+
+        $(document).ajaxStart(() => {
+            Array.from(document.forms).forEach(f =>{
+                Array.from(f.elements).forEach(e => {
+                    if(!e.disabled){
+                        e.setAttribute('temporarily-disabled','1');
+                        e.disabled = true;
+                    }
+                });
+            });
         });
 
 

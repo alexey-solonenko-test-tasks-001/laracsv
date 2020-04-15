@@ -13,3 +13,11 @@ Stack trace:
 [11-Apr-2020 21:38:40 UTC] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes) in C:\code\laracsv\storage\framework\views\6214d3e760370450f7bafd7e8b1749573f03193d.php on line 18
 [12-Apr-2020 21:10:22 UTC] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 1556480 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 464
 [12-Apr-2020 21:22:08 UTC] PHP Fatal error:  Maximum execution time of 30 seconds exceeded in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 338
+[15-Apr-2020 19:42:52 UTC] PHP Fatal error:  Maximum execution time of 30 seconds exceeded in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 491
+[15-Apr-2020 19:52:57 UTC] PHP Fatal error:  Maximum execution time of 30 seconds exceeded in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 491
+[15-Apr-2020 19:59:26 UTC] PHP Fatal error:  Allowed memory size of 268435456 bytes exhausted (tried to allocate 20480 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php on line 2977
+[15-Apr-2020 20:12:06 UTC] PHP Fatal error:  Allowed memory size of 268435456 bytes exhausted (tried to allocate 20480 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Support\Arr.php on line 222
+[15-Apr-2020 20:27:14 UTC] PHP Fatal error:  Allowed memory size of 268435456 bytes exhausted (tried to allocate 16384 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 485
+[15-Apr-2020 20:38:33 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 16384 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 485
+[15-Apr-2020 20:57:30 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 16384 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 485
+[15-Apr-2020 21:51:28 UTC] PHP Fatal error:  Maximum execution time of 30 seconds exceeded in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 491

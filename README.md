@@ -8,11 +8,39 @@
 </p>
 
 
-## Tables 
+## CLI
+Scripts are located in the storage folde.
+File upload script: .
+Tables management script: .
+I don't have much experience writing scripts for CLI, or CLI apps (except cronjobs), however, I can learn if needed.
 
-deals_logs I don't know the requirements for the deal_logs table.
-I added a unique key, however, I would keep a logs table without 
-such constraints, and would allow multiple records for the same tstamp.
+## Login&security
+Used Laravel defaults. While they are 'out-of-the-box', it still took time making Laravel work both, on local and remote deployment! 
+
+## URL-search
+Please, consider a button that generates a link. It'd be still problematic handling it with pure GET, so I'm using javascript to consume the GET string, clean-up the URL bar, and reload the results.
+
+## 
+
+
+## Tables
+
+Tables deal_types and client_list are small, and, basically, they don't benefit from index at this stage.
+However, for future they are indexed for joins and search by var-chars. Queryies for tables creations are avaialble in the log on the page.
+
+Table deals_logs. I don't know the requirements for the deal_logs table. I added a unique key to demonstrate that no duplicates are imported fromo the file. However, I would keep a logs table without such constraints, and would allow multiple records for the same tstamp.
+
+Regarding indexes, even with a bit of randomly generated data the table well benefits of two indexes added for client_id and deal_type.
+
+Just in case this table needs a better performance for frequent lookups, and if we have enough resources on the server, then, considering all the orderings, groupings and etc. we are doing, the table will be even faster with:
+INDEX `mkey` (client_id,deal_type,deal_tstamp,deal_accepted,deal_refused).
+
+## Database
+
+I used default settings of creating a database with MySQL Workbench. I'm working with SQL queries on a daily basis, but I'm not much into DBA, however, I'm interested in developing with it.
+
+
+
 
 
 

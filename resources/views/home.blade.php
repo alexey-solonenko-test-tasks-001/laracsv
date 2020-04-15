@@ -27,10 +27,12 @@
                 <h2>Table Management</h2>
             </div>
             <div class='card-body'>
-                <div class='form-row'>
-                    <div class='col-auto mr-auto'><button data-btn-self-init-ajax='create_tables' class=' btn btn-success'><b>+</b> Create All Tables </button></div>
-                    <div class='col-auto ml-auto'><button data-btn-self-init-ajax='drop_tables' class=' btn btn-danger'><b>X</b> Delete All Tables</button></div>
-                </div>
+                <form name='tables_management'>
+                    <div class='form-row'>
+                        <div class='col-auto mr-auto'><button data-btn-self-init-ajax='create_tables' class=' btn btn-success'><b>+</b> Create All Tables </button></div>
+                        <div class='col-auto ml-auto'><button data-btn-self-init-ajax='drop_tables' class=' btn btn-danger'><b>X</b> Delete All Tables</button></div>
+                    </div>
+                </form>
             </div>
         </div>
         <div class='card my-3'>
@@ -38,13 +40,15 @@
                 <h2>Upload CSV</h2>
             </div>
             <div class='card-body'>
-                <div class='form-row p-2 dropzone' style="border:2px dashed black;">
-                    <div class='col-12 bg-ligth'>You don't need to upload a file. If a file input is empty, the file will be downloaded from a server.</div>
-                    <div class='col-12 bg-ligth '>Attach a file using input, or drag and drop.</div>
-                    <div class='col-12 mr-auto default-url'><input type='text' class='w-100 form-control mb-3' disabled value={{ config('csvhandler.csv_backup_url') }}/></div>
-                    <div class='col-auto mr-auto'><label>Optional file<input type='file' class='form-control-file' name='csv' /></label></div>
-                    <div class='col-auto align-self-center'><button name='uploadCsv' class=' btn btn-success'><b>+</b> Upload CSV from URL</button></div>
-                </div>
+                <form name='upload_csv_form'>
+                    <div class='form-row p-2 dropzone' style="border:2px dashed black;">
+                        <div class='col-12 bg-ligth'>You don't need to upload a file. If a file input is empty, the file will be downloaded from a server.</div>
+                        <div class='col-12 bg-ligth '>Attach a file using input, or drag and drop.</div>
+                        <div class='col-12 mr-auto default-url'><input type='text' class='w-100 form-control mb-3' disabled value={{ config('csvhandler.csv_backup_url') }}/></div>
+                        <div class='col-auto mr-auto'><label>Optional file<input type='file' class='form-control-file' name='csv' /></label></div>
+                        <div class='col-auto align-self-center'><button name='uploadCsv' class=' btn btn-success'><b>+</b> Upload CSV from URL</button></div>
+                    </div>
+                </form>
             </div>
         </div>
         @include('includes.deals_log_viewer',['now' => $m['now']])

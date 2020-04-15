@@ -66,7 +66,10 @@ class ApiDealsLogsController extends Controller implements Defaults
             }
             $dbData = $this->selectDealsLogsDataFromDb($request);
             AjaxResponse::$resPayload['debug_db_data'] = $dbData;
-            AjaxResponse::$data = $this->formatDbLogsDataForDataTablesPlugin($dbData);
+            $ret = $this->formatDbLogsDataForDataTablesPlugin($dbData);
+            AjaxResponse::$data = $ret['data'];
+            AjaxResponse::$resPayload['totalAccepted'] = $ret['total_accepted'];
+            AjaxResponse::$resPayload['totalRefused'] = $ret['total_refused'];
             AjaxResponse::$recordsTotal = ($dbData['count'] ?? 100);
             AjaxResponse::$recordsFiltered = ($dbData['count'] ?? 100);
             AjaxResponse::$draw = $req['draw'];
@@ -300,7 +303,8 @@ class ApiDealsLogsController extends Controller implements Defaults
             $dbRows = ((array) $dbData['data'])['data'];
         }
         $format = str_replace('%', '', $dbData['dtFormat']);
-
+        $totalAccepted = 0;
+        $totalRefused = 0;
         foreach ($dbRows as $dbRow) {
             $row = (array) $dbRow;
             /* Timestamp is provided only when no grouping is applied */
@@ -324,9 +328,15 @@ class ApiDealsLogsController extends Controller implements Defaults
             unset($row['client_id']);
             unset($row['deal_type']);
             $ret[] = $row;
+            $totalAccepted += $row['accepted'];
+            $totalRefused += $row['refused'];
         }
 
-        return $ret;
+        return [
+            'data' => $ret,
+            'total_accepted' => $totalAccepted,
+            'total_refused' => $totalRefused,
+        ];
     }
 
 
@@ -340,20 +350,21 @@ class ApiDealsLogsController extends Controller implements Defaults
             return $ret;
         }
         $logs = [];
-        $batch = 50;
-        $deals = DB::table('deal_types')->get(['id']);
-        $deals = array_column($deals->toArray(), 'id');
-        $clients = DB::table('client_list')->get(['id']);
-        $clients = array_column($clients->toArray(), 'id');
+        $batch = 100000;
+        $deals = DB::table('deal_types')->get(['deal_type']);
+        $deals = array_column($deals->toArray(), 'deal_type');
+        $clients = DB::table('client_list')->get(['client_id']);
+        $clients = array_column($clients->toArray(), 'client_id');
         $dealsLen = count($deals) - 1;
         $clientsLen = count($clients) - 1;
-
+        set_time_limit(600000);
+        ini_set('memory_limit', '512M');
         for ($i = 0; $i < $batch; $i++) {
             $clientId = rand(0, $clientsLen);
             $dealId = rand(0, $dealsLen);
             $Jan1Of2015 = 1420124751;
             $baseTstamp = date_create_from_format('Y-m-d H:i:s', date('Y-m-d', rand($Jan1Of2015, time())) . ' 00:00:00');
-            for ($j = 1; $j <= 100; $j++) {
+            for ($j = 1; $j <= 200; $j++) {
                 $row['client_id'] = $clientId;
                 $row['deal_type'] = $dealId;
                 /* Within the same day */
@@ -361,8 +372,8 @@ class ApiDealsLogsController extends Controller implements Defaults
                 $row['deal_accepted'] = rand(0, 20);
                 $row['deal_refused'] = rand(0, 20);
                 $logs[] = $row;
-                if ($j % 100 == 0) {
-                    DB::table('deals_log')->insert($logs);
+                if ($j % 50 == 0) {
+                    DB::table('deals_log')->insertOrIgnore($logs);
                     $logs = [];
                 }
             }
@@ -388,7 +399,13 @@ class ApiDealsLogsController extends Controller implements Defaults
         $ret = DB::select('SELECT table_name from information_schema.tables where table_schema = "' . env('DB_DATABASE') . '"');
         $allTables = [];
         foreach ($ret as $row) {
-            $allTables[] = $row->TABLE_NAME;
+            /* Different  */
+            if (isset($row->TABLE_NAME)) {
+                $allTables[] = $row->TABLE_NAME;
+            }
+            if (isset($row->table_name)) {
+                $allTables[] = $row->table_name;
+            }
         }
 
         if (empty(array_intersect(['client_list', 'deal_types'], $allTables))) {
@@ -512,16 +529,18 @@ class ApiDealsLogsController extends Controller implements Defaults
                 }
             }
         }
+        $iniFilePath = $filepath;
         if (!empty($filepath)) {
             if (!file_exists($filepath)) {
-                $filepath = base_path() . '/' . $filepath;
+                $filepath = base_path() . "/" . $iniFilePath;
             }
             if (!file_exists($filepath)) {
-                $filepath = storage_path() . '/' . $filepath;
+                $filepath = storage_path() . '/' . $iniFilePath;
             }
             if (!file_exists($filepath)) {
-                AjaxResponse::$errors[] = 'Cannot find a local file to read';
-                return;
+                AjaxResponse::$errors[] = 'Cannot find a local file to read. Please, provide the file path relative to the root or storage folder of the application. On Linux you might need to prepend the path with //';
+                AjaxResponse::$errors[] = $filepath;
+                return 0;
             }
             $file = new \SplFileObject($filepath);
             $fileIsInRequest = true;
@@ -540,7 +559,7 @@ class ApiDealsLogsController extends Controller implements Defaults
             $file = new \SplFileObject(base_path() . '/tmp/localfile.tmp', 'r');
         }
 
-        if ($file->isExecutable()) {
+        if ($file->isExecutable() && empty($filepath)) {
             AjaxResponse::$errors[] = 'Uploaded file is executable.';
         }
 
@@ -708,7 +727,12 @@ class ApiDealsLogsController extends Controller implements Defaults
             $ret = DB::select('SELECT table_name from information_schema.tables where table_schema = "' . env('DB_DATABASE') . '"');
             $allTables = [];
             foreach ($ret as $row) {
-                $allTables[] = $row->TABLE_NAME;
+                if (isset($row->TABLE_NAME)) {
+                    $allTables[] = $row->TABLE_NAME;
+                }
+                if (isset($row->table_name)) {
+                    $allTables[] = $row->table_name;
+                }
             }
 
             $allTablesQueries = json_decode(Storage::disk('local')->get('queries/create_tables_queries.json'));
@@ -744,7 +768,12 @@ class ApiDealsLogsController extends Controller implements Defaults
             $ret = DB::select('SELECT table_name from information_schema.tables where table_schema = "' . env('DB_DATABASE') . '"');
             $allTables = [];
             foreach ($ret as $row) {
-                $allTables[] = $row->TABLE_NAME;
+                if (isset($row->TABLE_NAME)) {
+                    $allTables[] = $row->TABLE_NAME;
+                }
+                if (isset($row->table_name)) {
+                    $allTables[] = $row->table_name;
+                }
             }
 
             $allTablesQueries = json_decode(Storage::disk('local')->get('queries/create_tables_queries.json'));
@@ -769,6 +798,7 @@ class ApiDealsLogsController extends Controller implements Defaults
                 "Tables successfully dropped",
             ],
         ];
+        AjaxResponse::$confirms[] = 'Tables successfully dropped';
 
         return AjaxResponse::respond();
     }

@@ -37,7 +37,7 @@ homeP.fn.initializeUploadCsvBtn = function () {
                     type: "POST",
                     url: "upload_csv",
                     completed: function (data) {
-                        homeP.el.dDealLogsTable.ajax.reload(null, false);
+                        $.fn.dataTable.tables()[0].ajax.reload(null, false);
                     },
                     async: true,
                     data: f,

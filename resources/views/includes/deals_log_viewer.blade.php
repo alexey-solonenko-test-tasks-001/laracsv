@@ -18,6 +18,15 @@
             <td></td>
         </tr>
     </tbody>
+    <tfoot>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class='text-left font-weight-bold'></td>
+            <td class='text-left font-weight-bold'></td>
+        </tr>
+    </tfoot>
 </table>
 @endsection
 
@@ -168,8 +177,21 @@
         }
         delete window.searchDealLogsParams;
 
-        dealsLogViewer.el.jDealLogsTable.DataTable(initConfig);
-        dealsLogViewer.el.dDealLogsTable = dealsLogViewer.el.jDealLogsTable.DataTable();
+        /**
+         * @function
+         * @param {Object} ev
+         * @param {DataTables.Settings} settings
+         * @param {string} json
+         * @param {jQuery.Xhr} xhr
+         */
+        dealsLogViewer.el.jDealLogsTable.on('xhr.dt',function(ev,settings, json, xhr){
+            let api = new $.fn.dataTable.Api(settings);
+            console.log(api);   
+            api.table().node().tFoot.rows[0].cells[3].textContent = json.resPayload.totalAccepted;
+            api.table().node().tFoot.rows[0].cells[4].textContent = json.resPayload.totalRefused;
+        });
+
+        dealsLogViewer.el.dDealLogsTable = dealsLogViewer.el.jDealLogsTable.DataTable(initConfig);
 
         dealsLogViewer.el.logsForm.addEventListener('keydown', ev => {
             if (ev.key == 'Enter') {

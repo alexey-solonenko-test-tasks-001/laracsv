@@ -34,6 +34,7 @@ let sftp = new Client();
                         'app',
                         'public',
                         'resources',
+                        'storage',
                         'routes',
                         'tests',
                 ];
