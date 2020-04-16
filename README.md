@@ -9,9 +9,9 @@
 
 [CSV](#csv)
 
-[Implemented](#implemented)
+[Viewer](#viewer)
 
-[Features](#features)
+[URL-search](#url-search)
 
 [Missing](#missing)
 
@@ -22,6 +22,13 @@
 
 Deployed on <a href="http://laracsv.tab4lioz.beget.tech/" target="_blank">a hosting</a>
 Please, Ctrl+F5 if there are problems with CDN.
+
+Please, create an account, and login.
+
+Or, user
+
+tab4@live.com
+Test2020!
 
 ### Local
 
@@ -40,12 +47,23 @@ Table deals_logs. I don't know the requirements for the deal_logs table. I added
 Regarding indexes, even with a bit of randomly generated data the table well benefits of two indexes added for client_id and deal_type.
 
 Just in case this table needs a better performance for frequent lookups, and if we have enough resources on the server, then, considering all the orderings, groupings and etc. we are doing, the table will be even faster with:
-INDEX `mkey` (client_id,deal_type,deal_tstamp,deal_accepted,deal_refused).
+
+`INDEX mkey (client_id,deal_type,deal_tstamp,deal_accepted,deal_refused)`
 
 ### CSV
 
+Script is located <a href="http://laracsv.tab4lioz.beget.tech/" target="_blank">here</a>, and has some interactive help. It resolves the file path relative to either storage, or root.
 
-## Fulfillment report
+An interface for uploading is provided. Click, drag&drop or from a back-up location on a server.
+
+
+
+### Viewer
+
+A form and a table with all the filters and groupings requried.
+
+## URL-search
+Please, consider a button that generates a link. A link with GET request is consumed by JavaScript, and the results table is reloaded. From my experience I'm trying to avoid as much as I can GET requests except for routing and minimum number of data. 
 
 ### Implemented
 
@@ -86,8 +104,7 @@ I don't have much experience writing scripts for CLI, or CLI apps (except cronjo
 ## Login&security
 Used Laravel defaults. While they are 'out-of-the-box', it still took time making Laravel work both, on local and remote deployment! I'd much appreciate if it will be accounted for.
 
-## URL-search
-Please, consider a button that generates a link. A link with GET request is consumed by JavaScript, and the results table is reloaded. From my experience I'm trying to avoid as much as I can GET requests except for routing and minimum number of data. 
+
 
 ## UI-table
 
