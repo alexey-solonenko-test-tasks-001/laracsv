@@ -1,3 +1,9 @@
 *
 !public/
 !.gitignore
+!phpexecs/
+!queries/
+!cli_utils.php
+!tables.php
+!uploadcsv.php
+!create_tables_queries.json

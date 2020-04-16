@@ -1,0 +1,32 @@
+{
+    "deal_types": [
+        "create table `deal_types` (",
+        "`deal_type` int unsigned NOT NULL,",
+        "`type_label_en` varchar(100),",
+        "UNIQUE KEY `deal_type` (`deal_type`),",
+        "INDEX `mind` (`deal_type`,`type_label_en`)",
+        ") ENGINE=InnoDB DEFAULT CHARSET = utf8;"
+    ],
+    "client_list": [
+        "create table `client_list` (",
+        "`client_id` int unsigned NOT NULL,",
+        "`username` varchar(100),",
+        "UNIQUE KEY (`client_id`),",
+        "INDEX `username` (`client_id`,`username`)",
+        ") ENGINE=InnoDB DEFAULT CHARSET = utf8;"
+    ],
+    "deals_log": [
+        "create table `deals_log` (",
+        "`id` int unsigned NOT NULL AUTO_INCREMENT,",
+        "`client_id` int unsigned NOT NULL,",
+        "`deal_type` varchar(100),",
+        "`deal_tstamp` int,",
+        "`deal_accepted` int,",
+        "`deal_refused` int,",
+        "PRIMARY KEY (`id`),",
+        "UNIQUE KEY `tstamp` (`deal_tstamp`,`client_id`,`deal_type`,`deal_accepted`,`deal_refused`),",
+        "INDEX (`client_id`),",
+        "INDEX (`deal_type`)",
+        ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET = utf8;"
+    ]
+}

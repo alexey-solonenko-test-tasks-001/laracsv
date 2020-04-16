@@ -60,10 +60,12 @@ An interface for uploading is provided. Click, drag&drop or from a back-up locat
 
 ### Viewer
 
-A form and a table with all the filters and groupings requried.
+A form and a table with all the filters and groupings requried are provided. Either use a button for a default multi-column ordering, or use `Shift` for your custom one.
 
 ## URL-search
-Please, consider a button that generates a link. A link with GET request is consumed by JavaScript, and the results table is reloaded. From my experience I'm trying to avoid as much as I can GET requests except for routing and minimum number of data. 
+Please, consider a button that generates a link. A link with GET request is consumed by JavaScript, and the results table is reloaded. 
+
+
 
 ### Implemented
 
