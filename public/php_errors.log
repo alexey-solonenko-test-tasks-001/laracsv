@@ -21,3 +21,4 @@ Stack trace:
 [15-Apr-2020 20:38:33 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 16384 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 485
 [15-Apr-2020 20:57:30 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 16384 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 485
 [15-Apr-2020 21:51:28 UTC] PHP Fatal error:  Maximum execution time of 30 seconds exceeded in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 491
+[15-Apr-2020 22:05:58 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 16384 bytes) in C:\code\laracsv\vendor\laravel\framework\src\Illuminate\Database\Connection.php on line 485

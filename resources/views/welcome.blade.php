@@ -78,8 +78,6 @@
                     @endauth
                 </div>
             @endif
-
-     
         </div>
     </body>
 </html>

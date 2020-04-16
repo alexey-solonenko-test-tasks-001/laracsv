@@ -5,7 +5,6 @@ common.el = {};
 toastr.options.timeOut = 15000;
 toastr.options.extendedTimeOut = 15000;
 
-
 $(function () {
     /**
      * Do use function to keep the global namespace clean.

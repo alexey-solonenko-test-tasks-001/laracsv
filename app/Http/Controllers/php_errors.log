@@ -14,3 +14,7 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in C:\code\laracsv\app\Http\Controllers\ApiDealsLogsController.php on line 19
+[16-Apr-2020 18:37:46 UTC] PHP Fatal error:  Uncaught Error: Class 'App\Http\Controllers\Controller' not found in C:\code\laracsv\app\Http\Controllers\ApiDealsLogsController.php:19
+Stack trace:
+#0 {main}
+  thrown in C:\code\laracsv\app\Http\Controllers\ApiDealsLogsController.php on line 19

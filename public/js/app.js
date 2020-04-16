@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -38435,9 +38435,7 @@ module.exports = function(module) {
  */
 __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 
-__webpack_require__(/*! ./common.js */ "./resources/js/common.js");
-
-__webpack_require__(/*! ./homepage.js */ "./resources/js/homepage.js"); //window.Vue = require('vue');
+__webpack_require__(/*! ./common.js */ "./resources/js/common.js"); //window.Vue = require('vue');
 
 /**
  * The following block of code may be used to automatically register your
@@ -38536,7 +38534,6 @@ $(function () {
    * Do use function to keep the global namespace clean.
    */
   (function () {
-    var _arguments = arguments;
     $(document).ajaxSend(function (event, xhr, settings) {
       settings.url = getAjaxUrl() + settings.url;
     });
@@ -38591,7 +38588,6 @@ $(function () {
       });
     });
     $(document).ajaxStart(function () {
-      console.log(_arguments);
       Array.from(document.forms).forEach(function (f) {
         Array.from(f.elements).forEach(function (e) {
           if (!e.disabled) {
@@ -38760,124 +38756,14 @@ common.fn.initSelfInittedAjaxButtons = function () {
 
 /***/ }),
 
-/***/ "./resources/js/homepage.js":
-/*!**********************************!*\
-  !*** ./resources/js/homepage.js ***!
-  \**********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-window.homeP = {};
-homeP.el = {};
-homeP.fn = {};
-$(function () {
-  homeP.fn.init();
-  homeP.fn.initializeUploadCsvBtn();
-  homeP.fn.initializeDropzone();
-});
-
-homeP.fn.init = function () {
-  homeP.el.uploadCsvBtn = document.querySelector('button[name="uploadCsv"]');
-  homeP.el.csvFileInp = document.querySelector('input[name="csv"]');
-  homeP.el.dropzone = document.querySelector('.dropzone');
-  homeP.el.defaultUrl = document.querySelector('.default-url');
-};
-
-homeP.fn.initializeUploadCsvBtn = function () {
-  homeP.el.uploadCsvBtn.addEventListener('click', function (ev) {
-    ev.preventDefault();
-
-    function uploadFromRemoteServer() {
-      $.ajax({
-        url: 'upload_csv'
-      });
-      return;
-    }
-
-    if (homeP.el.csvFileInp.value.length > 2 && homeP.el.csvFileInp.files.length > 0) {
-      var fileName = homeP.el.csvFileInp.files[0].name.split('.');
-      var ext = fileName[fileName.length - 1];
-
-      if (ext != 'csv') {
-        uploadFromRemoteServer();
-      } else {
-        var f = new FormData();
-        f.append('csv', homeP.el.csvFileInp.files[0]);
-        $.ajax({
-          type: "POST",
-          url: "upload_csv",
-          completed: function completed(data) {
-            homeP.el.dDealLogsTable.ajax.reload(null, false);
-          },
-          async: true,
-          data: f,
-          cache: false,
-          contentType: false,
-          processData: false,
-          timeout: 60000
-        });
-      }
-    } else {
-      uploadFromRemoteServer();
-    }
-  });
-  homeP.el.csvFileInp.addEventListener('click', function () {
-    homeP.el.csvFileInp.value = '';
-    homeP.el.csvFileInp.files.length = 0;
-  });
-};
-
-homeP.fn.initializeDropzone = function () {
-  window.addEventListener("dragover", function (e) {
-    if (e instanceof Event) {
-      e.preventDefault();
-    }
-  }, false);
-  window.addEventListener("drop", function (e) {
-    if (e instanceof Event) {
-      e.preventDefault();
-    }
-  }, false);
-  homeP.el.dropzone.addEventListener('dragover', function () {
-    homeP.el.dropzone.classList.add('bg-secondary');
-  });
-  homeP.el.dropzone.addEventListener('dragleave', function () {
-    homeP.el.dropzone.classList.remove('bg-secondary');
-  });
-  homeP.el.dropzone.addEventListener('drop', function (ev) {
-    ev.preventDefault();
-    homeP.el.dropzone.classList.remove('bg-secondary');
-    homeP.el.csvFileInp.files = ev.dataTransfer.files;
-  });
-  homeP.el.defaultUrl.addEventListener('drop', function (ev) {
-    ev.preventDefault();
-    homeP.el.dropzone.classList.remove('bg-secondary');
-    homeP.el.csvFileInp.files = ev.dataTransfer.files;
-  });
-};
-
-/***/ }),
-
-/***/ "./resources/sass/app.scss":
-/*!*********************************!*\
-  !*** ./resources/sass/app.scss ***!
-  \*********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-// removed by extract-text-webpack-plugin
-
-/***/ }),
-
-/***/ 0:
-/*!*************************************************************!*\
-  !*** multi ./resources/js/app.js ./resources/sass/app.scss ***!
-  \*************************************************************/
+/***/ 2:
+/*!***********************************!*\
+  !*** multi ./resources/js/app.js ***!
+  \***********************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! C:\code\laracsv\resources\js\app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! C:\code\laracsv\resources\sass\app.scss */"./resources/sass/app.scss");
+module.exports = __webpack_require__(/*! C:\code\laracsv\resources\js\app.js */"./resources/js/app.js");
 
 
 /***/ })

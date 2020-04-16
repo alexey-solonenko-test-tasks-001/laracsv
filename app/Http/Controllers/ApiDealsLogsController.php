@@ -56,13 +56,17 @@ class ApiDealsLogsController extends Controller implements Defaults
             }
 
             $req = $request->all();
-            $from = \DateTime::createFromFormat('Y-m-d H:i:s', $req['from'] . '  00:00:00');
-            if ($from instanceof \DateTime) {
-                $request->merge(['from_tstamp' => $from->getTimestamp()]);
+            if (!empty($req['from'])) {
+                $from = \DateTime::createFromFormat('Y-m-d H:i:s', $req['from'] . '  00:00:00');
+                if ($from instanceof \DateTime) {
+                    $request->merge(['from_tstamp' => $from->getTimestamp()]);
+                }
             }
-            $to = \DateTime::createFromFormat('Y-m-d H:i:s', $req['to'] . ' 23:59:59');
-            if ($to instanceof \DateTime) {
-                $request->merge(['to_tstamp' => $to->getTimestamp()]);
+            if (!empty($req['from'])) {
+                $to = \DateTime::createFromFormat('Y-m-d H:i:s', $req['to'] . ' 23:59:59');
+                if ($to instanceof \DateTime) {
+                    $request->merge(['to_tstamp' => $to->getTimestamp()]);
+                }
             }
             $dbData = $this->selectDealsLogsDataFromDb($request);
             AjaxResponse::$resPayload['debug_db_data'] = $dbData;
@@ -74,7 +78,7 @@ class ApiDealsLogsController extends Controller implements Defaults
             AjaxResponse::$recordsFiltered = ($dbData['count'] ?? 100);
             AjaxResponse::$draw = $req['draw'];
             AjaxResponse::$logs[] = [
-                'time' => time(),
+                'time' => date(Defaults::DATE_TIME_FORMAT, time()),
                 'infos' => [
                     DB::getQueryLog()[count(DB::getQueryLog()) - 2]['query'],
                 ]

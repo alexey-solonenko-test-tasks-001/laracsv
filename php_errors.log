@@ -7,3 +7,4 @@
 [15-Apr-2020 20:27:14 UTC] PHP Fatal error:  Allowed memory size of 268435456 bytes exhausted (tried to allocate 32768 bytes) in C:\code\laracsv\vendor\symfony\error-handler\Error\FatalError.php on line 1
 [15-Apr-2020 20:38:33 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 32768 bytes) in C:\code\laracsv\vendor\symfony\error-handler\Error\FatalError.php on line 1
 [15-Apr-2020 20:57:31 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 32768 bytes) in C:\code\laracsv\vendor\symfony\error-handler\Error\FatalError.php on line 1
+[15-Apr-2020 22:05:58 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 32768 bytes) in C:\code\laracsv\vendor\symfony\error-handler\Error\FatalError.php on line 1

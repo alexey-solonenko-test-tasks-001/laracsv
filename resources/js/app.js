@@ -6,7 +6,6 @@
 
 require('./bootstrap');
 require('./common.js');
-require('./homepage.js');
 
 //window.Vue = require('vue');
 
