@@ -5,7 +5,7 @@
 
 [Local](#local)
 
-[Tables](#tables)
+[Laravel](#laravel)
 
 [CSV](#csv)
 
@@ -13,10 +13,11 @@
 
 [URL-search](#url-search)
 
-[Missing](#missing)
+[Login&Security](#loging&security)
 
+[Database](#database)
 
-
+[Tables](#tables)
 
 ### Deployed App
 
@@ -32,7 +33,49 @@ Test2020!
 
 ### Local
 
-A default Laravel 7 bootstrapped project
+A default Laravel 7 bootstrapped project. 
+
+### Laravel
+
+I never built a Laravel project from beginning. Local and remote took sometime to setup.
+
+I intentionally left all code placed in one single controller. I'm not yet confident in understanding of the Laravel architecture to distribute the code among service providers, middleware, and etc.
+
+However, I used all the features I managed to get some hold of. Especially, in relation with view and assets, and Eloquent.
+
+### CSV
+
+Script is located <a href="https://github.com/AlexeySolonenko/laracsv/blob/master/storage/app/phpexecs/uploadcsv.php/" target="_blank">here</a>, and has some interactive help. It resolves the file path relative to either storage, or root.
+
+An interface for uploading is provided. Click, drag&drop or from a back-up location on a server.
+
+I don't have much experience writing scripts for CLI, or CLI apps (except cronjobs), however, I can learn if needed.
+- arguments as requested by task.
+- simple validations and confirms/errors messages, queries also outputted for reference.
+- tested on both, Win and Ubuntu (remote server) 
+
+
+### Viewer
+
+A form and a table with all the filters and groupings requried are provided. Either use a button for a default multi-column ordering, or use `Shift` for your custom one.
+
+You will have a handy `log` tool that lists actions and some of the queries.
+
+Also, for DB testing the is `generate random data` button.
+
+**PLEASE** note, that I dont' have access to all settings on my hosting, so the random data generation, as well as quering large datasets, may fail from time to time. You won't have those constraints on local.
+
+## URL-search
+Please, consider a button that generates a link. A link with GET request is consumed by JavaScript, and the results table is reloaded. 
+
+Button copies **last** **executed** query, it does not generate a new `GET` string.
+
+## Login&security
+Used Laravel defaults. While they are 'out-of-the-box', it still took time making Laravel work both, on local and remote deployment! I'd much appreciate if it will be accounted for.
+
+## Database
+
+I used default settings of creating a database with MySQL Workbench. I'm working with SQL queries on a daily basis, but I'm not much into DBA, however, I'm interested in developing with it.
 
 
 ### Tables
@@ -49,80 +92,5 @@ Regarding indexes, even with a bit of randomly generated data the table well ben
 Just in case this table needs a better performance for frequent lookups, and if we have enough resources on the server, then, considering all the orderings, groupings and etc. we are doing, the table will be even faster with:
 
 `INDEX mkey (client_id,deal_type,deal_tstamp,deal_accepted,deal_refused)`
-
-### CSV
-
-Script is located <a href="http://laracsv.tab4lioz.beget.tech/" target="_blank">here</a>, and has some interactive help. It resolves the file path relative to either storage, or root.
-
-An interface for uploading is provided. Click, drag&drop or from a back-up location on a server.
-
-
-
-### Viewer
-
-A form and a table with all the filters and groupings requried are provided. Either use a button for a default multi-column ordering, or use `Shift` for your custom one.
-
-## URL-search
-Please, consider a button that generates a link. A link with GET request is consumed by JavaScript, and the results table is reloaded. 
-
-
-
-### Implemented
-
-- table creation - 2 buttons + Ajax
-- import CSV, line-by-line parsing. Sanitation, security checks, tools to adjust performance. Customly written parser by me.
-- import CSV - you can either drag&drop a file, or do nothing - the file will be downloaded from a remote host by a default URL.
-- Data representation - DataTables + pagination, sorting.
-- using POST instead of GET
-- filters
-- - date range from/to
-- - client, deal search
-
-### Features
-
-- DataTables dynamic plugin
-- custom PHP
-- MySQL query builder lib
-- preventing duplicate usernames and deal types
-
-### Missing
-- Laravel, worked with Lumen a bit, but did not setup a Laravel app.
-- did not have time for login/logout
-- did not understand 'group_by' hour/day/month - how should the aggregate data be presented, please? Only accepts/refuses over a given period?
-- did not understand what kind of script is required to be provided for DB creation?;
-
-
-
-## CLI
-Scripts are located in the storage folde.
-File upload script: .
-Tables management script: .
-I don't have much experience writing scripts for CLI, or CLI apps (except cronjobs), however, I can learn if needed.
-- arguments as requested by task.
-- simple validations and confirms/errors messages, queries also outputted for reference.
-- tested on both, Win and Ubuntu (remote server) 
-
-
-## Login&security
-Used Laravel defaults. While they are 'out-of-the-box', it still took time making Laravel work both, on local and remote deployment! I'd much appreciate if it will be accounted for.
-
-
-
-## UI-table
-
-Please, refer to UI and button labels. Please, use Shift for multi-column ordering. The page forms get disabled while an Ajax call is executed.
-
-There are pop-up messages, and a log of actions taken. SQL queries are also outputted in the log.
-
-
-
-## Database
-
-I used default settings of creating a database with MySQL Workbench. I'm working with SQL queries on a daily basis, but I'm not much into DBA, however, I'm interested in developing with it.
-
-## Missing
-
-- In my point of view, I'd setup SSL (tls), improve styling, setup a continuous CI/CD pipeline, tests.
-- I have a great interest in studying the Laravel architecture more, and to update the business logic part to complay with "Laravel Way".
 
 

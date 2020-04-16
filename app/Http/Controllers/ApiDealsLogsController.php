@@ -228,7 +228,7 @@ class ApiDealsLogsController extends Controller implements Defaults
 
         if (isset($req['start']) && isset($req['length'])) {
             /* Get data with pagination, if displaying on the front end */
-            $data = $query->simplePaginate($req['length'], $columns, 'page', ($req['start'] / $req['length']));
+            $data = $query->simplePaginate($req['length'], $columns, 'page', ($req['start'] / $req['length'])+1);
         } else {
             /* Or, get all data, if, for future, exporting to a file/storage */
             $data = $query->get();
